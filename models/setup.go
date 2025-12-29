@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -30,12 +31,20 @@ func ConnnectDatabase() {
 		host, user, password, dbname, port,
 	)
 
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		log.Fatal("failed to connect to database:", err)
+	for i := 0; i < 10; i++ {
+		db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+		if err == nil {
+			DB = db
+			break
+		}
+
+		log.Println("database not ready yet... retrying in 3s")
+		time.Sleep(3 * time.Second)
 	}
 
-	DB = db
+	if DB == nil {
+		log.Fatal("could not connect to database after retries")
+	}
 
 	if err := DB.AutoMigrate(
 		&User{},
