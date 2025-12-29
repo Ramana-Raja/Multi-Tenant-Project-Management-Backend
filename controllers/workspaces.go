@@ -67,15 +67,14 @@ func CreateWorkspace(c *gin.Context) {
 }
 
 func Listworkspace(c *gin.Context) {
-	userIDVal, ok := c.Get("currentUser")
-	if !ok {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
-	}
-	userID := userIDVal.(uint)
+	userID := c.MustGet("currentUser").(uint)
 
 	var workspaces []models.Workspace
 
-	err := models.DB.Joins("JOIN workspace_members wm ON wm.workspace_id = workspaces.id").Where("workspace.id = ?", userID).Find(workspaces).Error
+	err := models.DB.
+		Joins("JOIN workspace_members wm ON wm.workspace_id = workspaces.id").
+		Where("wm.user_id = ?", userID).
+		Find(&workspaces).Error
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch workspaces"})
